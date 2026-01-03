@@ -1,0 +1,4 @@
+pdfplumber
+numpy
+openai
+python-dotenv
