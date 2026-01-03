@@ -1,8 +1,5 @@
-# # ingest.py → PDF → chunks
-
+# ingest.py → PDF → chunks
 import pdfplumber
-import os
-
 import unicodedata
 
 def fix_pdf_mojibake(text: str) -> str:

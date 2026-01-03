@@ -53,8 +53,7 @@ If retrieval looks bad, that is the expected and desired outcome.
 
 ## System Relationship to rag-minimal-control
 
-This repository is a **direct clone** of `rag-minimal-control` with:
-
+This repository is behaviorally identical to `rag-minimal-control` with respect to retrieval and generation, with:
 * Identical corpus
 * Identical chunking
 * Identical embeddings
@@ -125,6 +124,8 @@ This system is expected to show:
 * Relevant chunks appearing far below Top-K
 * Complete retrieval failure even when answers exist
 
+These observations are prerequisites for improvement — not failures to be corrected in this repository.
+
 These are not bugs.
 They are **diagnostic signals**.
 
@@ -147,23 +148,42 @@ No optimization is meaningful until failure is measured.
 ---
 
 ## How to Run
-
-Same as `rag-minimal-control`.
-
 - create a folder `data/` and add pdf files in it. (just 1 is fine)
-- create a .env file in root dir and add you OpenAI API key ket as:
-```
-OPENAI_API_KEY=<your-api-key>
-
-```
-- simply run:
-
+- create a .env file in root dir and add you OpenAI API key ket as: `OPENAI_API_KEY=<your-api-key>`
+- install dependencies: `pip install -r requirements.txt`
+- Run a Single Query (Baseline Behavior): This mirrors rag-minimal-control behavior and shows Top-K retrieval + refusal.
 ```bash
-pip install -r requirements.txt
-python app.py
+  python app.py --query "What is the purpose of this document?"
 ```
 
-Ensure retrieval logs are enabled.
+## Retrieval Observability & Evaluation
+- Export Corpus Chunks (Debugging / Ground Truth Construction)
+  * Exports all chunks with document IDs to a CSV file.
+  ```bash
+  python app.py --export-chunks
+  ```
+  * Output: `data/chunks_debug.csv`
+  * This file is used to manually identify gold (answer-bearing) chunks.
+
+- Run Corpus Diagnostics
+  * Prints document-level chunk counts and chunk → document mappings.
+  ```bash
+  python app.py --corpus-diag
+  ```
+- Run Retrieval Evaluation (Core Week-2 Artifact)
+  * Runs retrieval for a predefined question set and logs ranked results.
+  ```bash
+  python app.py --run-retrieval-eval --questions-csv data/retrieval_eval.csv
+  ```
+  * Output: `data/retrieval_evaluation_results.csv`
+  * This CSV is the primary evaluation artifact used for analysis.
+
+## Command-Line Arguments
+  * `--query`: Run a single retrieval + generation query
+  * `--export-chunks`: Export all chunks to CSV
+  * `--corpus-diag`: Print corpus diagnostics
+  * `--run-retrieval-eval`: Run retrieval evaluation harness
+  * `--questions-csv`: Path to evaluation question file
 
 ## Text Normalization Note
 
@@ -173,3 +193,15 @@ PDF text extraction exhibited common mojibake artifacts
 These were corrected using deterministic Unicode normalization
 and explicit glyph replacement. No semantic rewriting or
 content alteration was performed.
+
+## Evaluation Artifacts
+
+This repository produces a structured evaluation table containing:
+
+- Question
+- Gold (human-identified) chunk ID
+- Ranked retrieved chunk IDs
+- Rank of first relevant chunk
+- Whether the relevant chunk appears in Top-K
+
+This table is the primary diagnostic output of the system.

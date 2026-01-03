@@ -2,6 +2,7 @@
 import numpy as np
 
 # Function to embedd chunked text into vector
+# NOTE: This is a diagnostic embedding, not a semantic embedding
 def get_embedding(chunk):
     # Dummy embedding function: convert each character to its ASCII value and create a fixed-size vector
     embedding_size = 128
