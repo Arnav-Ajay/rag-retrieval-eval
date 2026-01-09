@@ -2,88 +2,119 @@
 
 ## Why This Repository Exists
 
-[rag-minimal-control](https://github.com/Arnav-Ajay/rag-minimal-control) established a **minimal RAG control system** and showed that, under strict evidence constraints, the model consistently refused to answer.
+The preceding repository,
+[`rag-minimal-control`](https://github.com/Arnav-Ajay/rag-minimal-control), established a critical baseline:
 
-That refusal was *correct* — but **unexplained**.
+> A minimal RAG system can behave *correctly* and still refuse to answer.
 
-This repository exists to answer a narrower and more fundamental question:
+That refusal was **expected and correct** under strict evidence constraints —
+but it left an essential question unanswered:
 
-> **When a RAG system refuses to answer, is it because the answer is absent — or because retrieval failed?**
+> **When a RAG system refuses to answer, is it because the answer is absent — or because retrieval failed to surface it?**
 
-This is not an optimization repo.
-It is a **retrieval observability and evaluation harness**.
+This repository exists to answer **only that question**.
+
+This is not an optimization repository.
+It is a **retrieval observability and failure measurement harness**.
 
 ---
 
 ## What Problem This System Solves
 
-This system makes retrieval behavior:
+Most RAG systems fail silently.
 
-* Observable
-* Measurable
-* Falsifiable
+They do not distinguish between:
 
-It allows a human to determine whether retrieval failures are due to:
+* missing information
+* retrieval failure
+* ranking collapse
+* generation refusal
 
-* Corpus absence
-* Representation collapse
-* Lexical bias
-* Ranking cutoff
-* Similarity score pathologies
+This repository makes retrieval behavior:
 
-without changing the retrieval system itself.
+* **Observable**
+* **Measurable**
+* **Falsifiable**
+
+without changing the underlying retrieval or generation system.
+
+---
+
+## What This Repository Demonstrates (Empirically)
+
+Using a fixed corpus and **54 human-grounded evaluation questions** spanning three canonical research papers, this repository establishes a hard result:
+
+> **Dense retrieval fails catastrophically even when the answer-bearing chunk exists in the corpus.**
+
+This failure persists even when inspecting retrieval results as deep as **Top-50**.
+
+---
+
+## Core Findings (Week-2 Final Results)
+
+### Top-K for Generation (K = 4)
+
+* **0 / 54 questions** retrieve the gold chunk in Top-4
+* **100% generation starvation** despite corpus completeness
+
+---
+
+### Inspect-20 vs Inspect-50
+
+| Metric                              | Inspect-20    | Inspect-50    |
+| ----------------------------------- | ------------- | ------------- |
+| Questions with gold chunk retrieved | 4 / 54        | 7 / 54        |
+| Median rank (when retrieved)        | ~18–20        | ~19           |
+| % questions with rank > 4           | ~92%          | ~90%          |
+| Questions never retrieved           | Vast majority | Vast majority |
+
+**Key observation**
+
+Increasing inspection depth from **20 → 50** recovers only **3 additional questions**, all still far outside Top-K.
+
+This is **not a cutoff artifact**.
+It is a **ranking failure**.
 
 ---
 
 ## What This System Explicitly Does NOT Do
 
-This implementation deliberately avoids:
+This repository deliberately avoids:
 
 * Changing embedding models
 * Improving chunking strategies
 * Retrieval reranking
-* Semantic search
+* Hybrid / lexical search
+* Query rewriting
 * LLM-based grading
 * Answer correctness evaluation
 * Any attempt to “fix” retrieval
 
-If retrieval looks bad, that is the expected and desired outcome.
+If retrieval looks bad, that is **expected and desired**.
+
+This repository exists to **measure failure**, not correct it.
 
 ---
 
-## System Relationship to rag-minimal-control
+## System Relationship to Other Repositories
 
-This repository is behaviorally identical to `rag-minimal-control` with respect to retrieval and generation, with:
-* Identical corpus
-* Identical chunking
-* Identical embeddings
-* Identical similarity metric
-* Identical Top-K retrieval for generation
+This repository sits **between** two others in the series:
 
-The **only difference** is the addition of retrieval observability.
+* [`rag-minimal-control`](https://github.com/Arnav-Ajay/rag-minimal-control)
+  Establishes a strict, retrieval-conditioned control system
 
-`rag-minimal-control` answers:
+* [`rag-hybrid-retrieval`](https://github.com/Arnav-Ajay/rag-hybrid-retrieval)
+  Tests whether sparse signals can surface evidence that dense retrieval misses
 
-> “Does the system behave correctly under constraint?”
+All components inherited from `rag-minimal-control` remain **unchanged**:
 
-`rag-retrieval-eval` answers:
+* Corpus
+* Chunking
+* Embeddings
+* Similarity metric
+* Top-K passed to the LLM (**K = 4**)
 
-> “Why does retrieval fail when answers exist?”
-
----
-
-## System Overview
-
-**Repo Contract:**
-
-* Inputs: same static PDF corpus as `rag-minimal-control`
-* Query input: deterministic evaluation questions
-* Output:
-
-  * Ranked retrieval results (Top-N for inspection)
-  * Similarity scores
-  * Human relevance labels (external)
-* Non-goal: generating correct answers
+The **only addition** is retrieval observability and human-grounded evaluation.
 
 ---
 
@@ -93,115 +124,137 @@ The **only difference** is the addition of retrieval observability.
 Document → Chunk → Embed → Retrieve → Rank → Top-K → Generate
 ```
 
-**Important distinction:**
+**Important distinction**
 
-* **Top-K (K=4)** → passed to the LLM (unchanged)
-* **Top-N (e.g., 20–50)** → logged for analysis only
-
----
-
-## What Is Being Measured
-
-This repository supports manual evaluation of:
-
-* **Context Recall @ K**
-* **Rank of First Relevant Chunk**
-* **Retrieval Miss Rate**
-* **False Similarity Signals**
-
-All relevance judgments are made by a human.
-
-No automated scoring is used.
+* **Top-K (K = 4)** → passed to the LLM (unchanged)
+* **Top-N (20 / 50)** → logged strictly for diagnosis
 
 ---
 
-## Expected Observations
+## Evaluation Methodology
 
-This system is expected to show:
+This repository performs **human-grounded retrieval evaluation**.
 
-* High similarity scores for semantically irrelevant chunks
-* Near-identical similarity values across many chunks
-* Relevant chunks appearing far below Top-K
-* Complete retrieval failure even when answers exist
+Measured signals include:
 
-These observations are prerequisites for improvement — not failures to be corrected in this repository.
+* Rank of first relevant chunk
+* Retrieval miss rate
+* False similarity dominance
+* Ranking depth collapse
 
-These are not bugs.
-They are **diagnostic signals**.
-
----
-
-## Why This Matters
-
-Most RAG systems fail silently.
-
-By separating:
-
-* **Retrieval failure**
-* **Corpus absence**
-* **Generation refusal**
-
-this repository establishes a causal foundation for all future improvements.
-
-No optimization is meaningful until failure is measured.
+No automated grading is used.
+No relevance is inferred.
+All gold labels are human-assigned.
 
 ---
 
-## How to Run
-- create a folder `data/` and add pdf files in it. (just 1 is fine)
-- create a .env file in root dir and add you OpenAI API key ket as: `OPENAI_API_KEY=<your-api-key>`
-- install dependencies: `pip install -r requirements.txt`
-- Run a Single Query (Baseline Behavior): This mirrors rag-minimal-control behavior and shows Top-K retrieval + refusal.
-```bash
-  python app.py --query "What is the purpose of this document?"
+## Data Directory Structure
+
+All inputs, ground truth artifacts, and evaluation outputs are stored under a single versioned `data/` directory.
+
+Data artifacts are treated as **first-class evaluation objects**, not transient logs.
+
+```
+data/
+├── input_pdfs/
+├── chunks_and_questions/
+└── results_and_summaries/
 ```
 
-## Retrieval Observability & Evaluation
-- Export Corpus Chunks (Debugging / Ground Truth Construction)
-  * Exports all chunks with document IDs to a CSV file.
-  ```bash
-  python app.py --export-chunks
-  ```
-  * Output: `data/chunks_debug.csv`
-  * This file is used to manually identify gold (answer-bearing) chunks.
+---
 
-- Run Corpus Diagnostics
-  * Prints document-level chunk counts and chunk → document mappings.
-  ```bash
-  python app.py --corpus-diag
-  ```
-- Run Retrieval Evaluation (Core Week-2 Artifact)
-  * Runs retrieval for a predefined question set and logs ranked results.
-  ```bash
-  python app.py --run-retrieval-eval --questions-csv data/retrieval_eval.csv
-  ```
-  * Output: `data/retrieval_evaluation_results.csv`
-  * This CSV is the primary evaluation artifact used for analysis.
+### `data/input_pdfs/`
 
-## Command-Line Arguments
-  * `--query`: Run a single retrieval + generation query
-  * `--export-chunks`: Export all chunks to CSV
-  * `--corpus-diag`: Print corpus diagnostics
-  * `--run-retrieval-eval`: Run retrieval evaluation harness
-  * `--questions-csv`: Path to evaluation question file
+Static source corpus used for all experiments.
 
-## Text Normalization Note
+Includes **three canonical research papers**:
 
-PDF text extraction exhibited common mojibake artifacts
-(e.g., mis-decoded dashes, arrows, and mathematical symbols).
+* *Attention Is All You Need*
+* *Large Language Models Are Few-Shot Learners*
+* *Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*
 
-These were corrected using deterministic Unicode normalization
-and explicit glyph replacement. No semantic rewriting or
-content alteration was performed.
+These PDFs are the **only knowledge source** available to the system.
 
-## Evaluation Artifacts
+The corpus is intentionally small and fixed to ensure failures are attributable to **retrieval behavior**, not data scale.
 
-This repository produces a structured evaluation table containing:
+---
 
-- Question
-- Gold (human-identified) chunk ID
-- Ranked retrieved chunk IDs
-- Rank of first relevant chunk
-- Whether the relevant chunk appears in Top-K
+### `data/chunks_and_questions/`
 
-This table is the primary diagnostic output of the system.
+Ground-truth construction artifacts.
+
+* `chunks_output.csv`
+
+  * Exported chunk-level view of the corpus
+  * Includes chunk IDs and document IDs
+  * Used to manually identify **gold (answer-bearing) chunks**
+
+* `question_input.csv`
+
+  * Hand-authored evaluation questions
+  * Each question is paired with a human-identified gold chunk
+  * Questions are natural-language and retrieval-faithful
+
+This directory defines the **evaluation contract**.
+Questions and gold labels are fixed.
+No automated relevance inference is performed.
+
+---
+
+### `data/results_and_summaries/`
+
+Primary outputs of the repository.
+
+* `questions_retrieval_results_inspect_20.csv`
+
+* `questions_retrieval_results_inspect_50.csv`
+
+  * Ranked retrieval results at two inspection depths
+  * Top-K for generation remains fixed at **K = 4**
+
+* `summary_overall.csv`
+
+  * Aggregate retrieval metrics
+  * Median rank, miss rates, Top-K failure rates
+
+* `summary_by_intent.csv`
+
+  * Retrieval performance stratified by question intent
+  * Used to test whether intent mitigates ranking failure
+
+All claims in this README are derived directly from these files.
+
+---
+
+## Design Principle
+
+> **Nothing in `data/` is ephemeral.**
+
+Every artifact exists to support:
+
+* reproducibility
+* human auditability
+* causal reasoning about retrieval failure
+
+No artifact is overwritten, sampled, or silently discarded.
+
+---
+
+## Why This Repository Matters
+
+This repository establishes a non-negotiable baseline:
+
+> **The dominant failure mode in baseline RAG systems is retrieval ranking collapse — not generation, not corpus absence, and not refusal logic.**
+
+This causal diagnosis is a prerequisite for:
+
+* hybrid retrieval
+* reranking
+* chunking strategy research
+* agentic retrieval systems
+
+No optimization is meaningful until this failure is measured.
+
+This repository measures it — conclusively.
+
+---

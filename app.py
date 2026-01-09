@@ -8,7 +8,7 @@ import csv
 
 
 # Export chunks to CSV for debugging
-def export_chunks_csv(all_chunks, output_path="data/chunks_debug.csv"):
+def export_chunks_csv(all_chunks, output_path):
 
     with open(output_path, mode='w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['chunk_id', 'doc_id', 'text']
@@ -25,7 +25,7 @@ def export_chunks_csv(all_chunks, output_path="data/chunks_debug.csv"):
     print(f"Chunks exported to {output_path}")
 
 # Retrieval evaluation
-def run_retrieval_evaluation(args, vector_store, inspect_k=20):
+def run_retrieval_evaluation(args, vector_store, inspect_k=50):
     import pandas as pd
     print("Running retrieval evaluation...\n")
 
@@ -34,7 +34,7 @@ def run_retrieval_evaluation(args, vector_store, inspect_k=20):
 
     for _, row in questions_df.iterrows():
         question_id = row["question_id"]
-        question_text = row["question"]
+        question_text = row["question_text"]
         gold_chunk_id = int(row["gold_chunk_id"])
         gold_doc_id = row["gold_doc_id"]
         results = retrieve_similar_documents(vector_store, question_text, top_k=inspect_k)
@@ -61,15 +61,17 @@ def run_retrieval_evaluation(args, vector_store, inspect_k=20):
 def main():
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pdf-dir", default=r"data/") # Path to directory containing PDFs
+    parser.add_argument("--pdf-dir", default=r"data/input_pdfs/") # Path to directory containing PDFs
     parser.add_argument("--query", default="Is the status for architectural decision case study final and locked?") # Query for retrieval
     
     parser.add_argument("--export-chunks", action="store_true") # Export chunks to CSV for debugging
     parser.add_argument("--corpus-diag", action="store_true") # Print corpus diagnostics
     parser.add_argument("--run-retrieval-eval", action="store_true") # Run retrieval evaluation
     
-    parser.add_argument("--questions-csv", default=r"data/retrieval_eval.csv") # Path to questions csv
-    parser.add_argument("--eval-output", default=r"data/retrieval_evaluation_results.csv") # output to eval results
+    
+    parser.add_argument("--chunks-csv", default=r"data/chunks_and_questions/chunks_output.csv") # Path to questions csv
+    parser.add_argument("--questions-csv", default=r"data/chunks_and_questions/question_input.csv") # Path to questions csv
+    parser.add_argument("--eval-output", default=r"data/results_and_summaries/questions_retrieval_results.csv") # output to eval results
     
     args = parser.parse_args()
     pdf_path = args.pdf_dir
@@ -97,9 +99,9 @@ def main():
                     break
     
     # Export chunks to CSV for debugging
-    if args.export_chunks:
+    if args.export_chunks and args.chunks_csv:
         print("\n")
-        export_chunks_csv(all_chunks)
+        export_chunks_csv(all_chunks, args.chunks_csv)
 
     # Corpus diagnostics
     if args.corpus_diag:
