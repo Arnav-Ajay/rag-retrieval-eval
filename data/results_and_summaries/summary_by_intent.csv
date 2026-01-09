@@ -1,12 +1,12 @@
-Intent Type,n,Median Rank,% Rank > 4
-definition,7,~19,100%
-comparative,1,18,100%
-factual,5,24,100%
-mechanistic,5,20,80%
-procedural,6,19,83%
-rationale,5,14,100%
-rhetorical / summary,5,22,80%
-numeric / factual,3,25,100%
-decision,3,18,67%
-scope / inventory,1,10,100%
-status / scope,1,26,100%
+Intent Type,n,% Top-K (Hybrid)
+Definition -> pure retrieval recall,17,~0%
+Mechanism -> localized reasoning,13,~0%
+Process -> multi-chunk sequencing,5,~0%
+Comparative -> ranking + synthesis,9,~0%
+Capability -> abstraction + summarization,7,~0%
+Principle -> conceptual grounding,4,~0%
+Historical -> provenance precision,3,~0%
+,,
+,,
+,,
+,,
