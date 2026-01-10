@@ -1,6 +1,6 @@
 Metric,Value
 Total questions,54
-Questions with any retrieval (? 50),7
+Questions with any retrieval,7
 Median rank (when retrieved),~19
-% rank > Top-K,~90%
+% rank > Top-K,100%
 Top-K success rate,0%
